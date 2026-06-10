@@ -22,7 +22,8 @@ def buscar_reclamacoes(slug):
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         page = browser.new_page()
-        page.goto(url, wait_until="networkidle", timeout=30000)
+        page.goto(url, wait_until="domcontentloaded", timeout=60000)
+        page.wait_for_timeout(5000)  # aguarda o JS renderizar a lista
         items = page.query_selector_all("a[href*='/reclamacao/']")
         for item in items:
             href = item.get_attribute("href")
