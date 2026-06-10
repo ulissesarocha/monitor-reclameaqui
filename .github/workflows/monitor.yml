@@ -1,0 +1,22 @@
+name: Monitor Reclame Aqui
+
+on:
+  schedule:
+    - cron: '0 9 * * *'   # Roda todo dia às 9h (horário UTC = 6h de Brasília)
+  workflow_dispatch:        # Permite rodar manualmente também
+
+jobs:
+  monitorar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Instalar Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      - name: Instalar dependências
+        run: pip install requests
+      - name: Rodar monitor
+        env:
+          GMAIL_SENHA: ${{ secrets.GMAIL_SENHA }}
+        run: python monitor.py
