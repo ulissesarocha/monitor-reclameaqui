@@ -2,20 +2,22 @@ name: Monitor Reclame Aqui
 
 on:
   schedule:
-    - cron: '0 9 * * *'   # Roda todo dia às 9h (horário UTC = 6h de Brasília)
-  workflow_dispatch:        # Permite rodar manualmente também
+    - cron: '0 9 * * *'
+  workflow_dispatch:
 
 jobs:
   monitorar:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - name: Instalar Python
-        uses: actions/setup-python@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
       - name: Instalar dependências
-        run: pip install requests
+        run: |
+          pip install requests playwright
+          playwright install chromium
+          playwright install-deps chromium
       - name: Rodar monitor
         env:
           GMAIL_SENHA: ${{ secrets.GMAIL_SENHA }}
