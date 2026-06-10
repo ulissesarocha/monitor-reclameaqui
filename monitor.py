@@ -14,10 +14,18 @@ SENHA_EMAIL = os.environ["GMAIL_SENHA"]
 ARQUIVO_VISTO = "reclamacoes_vistas.json"
 
 def buscar_reclamacoes():
-    url = f"https://iosearch.reclameaqui.com.br/raichu-io-site-search-v1/query/companyComplains/10/1"
-    params = {"company": EMPRESA_SLUG, "status": "NOT_ANSWERED"}
-    headers = {"User-Agent": "Mozilla/5.0"}
+    url = f"https://www.reclameaqui.com.br/empresa/{EMPRESA_SLUG}/lista-reclamacoes/"
+    params = {"status": "NAO_RESPONDIDA", "pagina": 1}
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+        "Accept": "application/json, text/plain, */*",
+        "Accept-Language": "pt-BR,pt;q=0.9",
+        "Referer": f"https://www.reclameaqui.com.br/empresa/{EMPRESA_SLUG}/",
+        "X-Requested-With": "XMLHttpRequest",
+    }
     r = requests.get(url, params=params, headers=headers, timeout=15)
+    print(f"Status HTTP: {r.status_code}")
+    print(f"Resposta: {r.text[:300]}")  # Para debug
     data = r.json()
     return data.get("complains", {}).get("data", [])
 
