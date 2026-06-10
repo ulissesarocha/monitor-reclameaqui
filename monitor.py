@@ -1,6 +1,6 @@
 # =============================================
 # CONFIGURE APENAS ESTAS 3 VARIÁVEIS:
-EMPRESA_SLUG = "UniFAJ"  # Ex: "magazine-luiza" (pega da URL do Reclame Aqui)
+EMPRESA_SLUG = "https://www.reclameaqui.com.br/empresa/unifaj-centro-universitario-de-jaguariuna/"  # Ex: "magazine-luiza" (pega da URL do Reclame Aqui)
 EMAIL_DESTINO = "negociosestrategicos.ulisses@unieduk.com.br"
 EMAIL_REMETENTE = "negociosestrategicos.ulisses@unieduk.com.br"
 # A senha do Gmail vai em Settings > Secrets (explicado abaixo)
