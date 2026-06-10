@@ -1,37 +1,42 @@
 # =============================================
-# CONFIGURE APENAS ESTAS 3 VARIÁVEIS:
-EMPRESA_SLUG = "unifaj-centro-universitario-de-jaguariuna"  # Ex: "magazine-luiza" (pega da URL do Reclame Aqui)
+EMPRESA_SLUG = "unifaj-centro-universitario-de-jaguariuna"
 EMAIL_DESTINO = "negociosestrategicos.ulisses@unieduk.com.br"
 EMAIL_REMETENTE = "negociosestrategicos.ulisses@unieduk.com.br"
-# A senha do Gmail vai em Settings > Secrets (explicado abaixo)
 # =============================================
 
-import requests, smtplib, os, json
+import os, json, smtplib
 from email.mime.text import MIMEText
 from datetime import datetime
+from playwright.sync_api import sync_playwright
 
 SENHA_EMAIL = os.environ["GMAIL_SENHA"]
 ARQUIVO_VISTO = "reclamacoes_vistas.json"
 
 def buscar_reclamacoes():
-    url = "https://iosearch.reclameaqui.com.br/raichu-io-site-search-v1/query/companyComplains/10/1"
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-        "Accept": "application/json",
-        "Accept-Language": "pt-BR,pt;q=0.9",
-        "Origin": "https://www.reclameaqui.com.br",
-        "Referer": f"https://www.reclameaqui.com.br/empresa/{EMPRESA_SLUG}/",
-    }
-    params = {
-        "company": EMPRESA_SLUG,
-        "status": "NOT_ANSWERED",
-        "order": "CREATED_DATE",
-    }
-    r = requests.get(url, params=params, headers=headers, timeout=15)
-    print(f"Status HTTP: {r.status_code}")
-    print(f"Resposta: {r.text[:500]}")
-    data = r.json()
-    return data.get("complains", {}).get("data", [])
+    url = f"https://www.reclameaqui.com.br/empresa/{EMPRESA_SLUG}/lista-reclamacoes/?status=NAO_RESPONDIDA"
+    reclamacoes = []
+
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        page = browser.new_page()
+        page.goto(url, wait_until="networkidle", timeout=30000)
+        items = page.query_selector_all("a[href*='/reclamacao/']")
+        for item in items:
+            href = item.get_attribute("href")
+            titulo = item.inner_text().strip()
+            if href and titulo:
+                rid = href.strip("/").split("/")[-1]
+                reclamacoes.append({"id": rid, "title": titulo, "href": href})
+        browser.close()
+
+    # Remove duplicatas por id
+    vistos_ids = set()
+    unicos = []
+    for r in reclamacoes:
+        if r["id"] not in vistos_ids:
+            vistos_ids.add(r["id"])
+            unicos.append(r)
+    return unicos
 
 def carregar_vistos():
     if os.path.exists(ARQUIVO_VISTO):
@@ -46,15 +51,11 @@ def salvar_vistos(ids):
 def enviar_email(novas):
     corpo = f"Você tem {len(novas)} nova(s) reclamação(ões) sem resposta no Reclame Aqui:\n\n"
     for r in novas:
-        titulo = r.get("title", "Sem título")
-        rid = r.get("id", "")
-        corpo += f"• {titulo}\n  https://www.reclameaqui.com.br/reclamacao/{rid}/\n\n"
-    
+        corpo += f"• {r['title']}\n  https://www.reclameaqui.com.br{r['href']}\n\n"
     msg = MIMEText(corpo)
     msg["Subject"] = f"⚠️ {len(novas)} reclamação(ões) nova(s) no Reclame Aqui"
     msg["From"] = EMAIL_REMETENTE
     msg["To"] = EMAIL_DESTINO
-
     with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:
         smtp.login(EMAIL_REMETENTE, SENHA_EMAIL)
         smtp.send_message(msg)
@@ -63,15 +64,4 @@ def enviar_email(novas):
 def main():
     print(f"Verificando em {datetime.now()}...")
     reclamacoes = buscar_reclamacoes()
-    vistos = carregar_vistos()
-    ids_atuais = {str(r["id"]) for r in reclamacoes}
-    novas = [r for r in reclamacoes if str(r["id"]) not in vistos]
-
-    if novas:
-        print(f"{len(novas)} nova(s) encontrada(s). Enviando e-mail...")
-        enviar_email(novas)
-        salvar_vistos(vistos | ids_atuais)
-    else:
-        print("Nenhuma reclamação nova.")
-
-main()
+    print(f"Total encontrado: {len(reclamacoes)}")
