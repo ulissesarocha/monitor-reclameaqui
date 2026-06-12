@@ -3,7 +3,7 @@ EMPRESAS = [
     "unifaj-centro-universitario-de-jaguariuna",
     "max-planck-faculdade",
 ]
-EMAIL_DESTINO = "negociosestrategicos.ulisses@unieduk.com.br"
+EMAIL_DESTINO = "juridico.nadia@unieduk.com.br, negociosestrategicos.ulisses@unieduk.com.br"
 EMAIL_REMETENTE = "negociosestrategicos.ulisses@unieduk.com.br"
 # =============================================
 
